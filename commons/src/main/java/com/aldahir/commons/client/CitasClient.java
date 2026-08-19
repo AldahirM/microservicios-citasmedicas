@@ -9,5 +9,7 @@ public interface CitasClient {
 
     @GetMapping("/medico/{idMedico}/citas")
     Integer obtenerCitasActivasPorMedico(@PathVariable Long idMedico);
+    @GetMapping("/paciente/{idPaciente}/citas")
+    Integer obtenerCitasActivasPorPaciente(@PathVariable Long idPaciente);
 
 }

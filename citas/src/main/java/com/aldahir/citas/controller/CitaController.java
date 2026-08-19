@@ -39,6 +39,4 @@ public class CitaController extends CommonController<CitaRequest, CitaResponse, 
         return ResponseEntity.ok(service.contarCitasPorPaciente(idPaciente));
     }
 
-
-
 }

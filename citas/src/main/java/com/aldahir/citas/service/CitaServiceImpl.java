@@ -17,6 +17,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.Objects;
@@ -79,6 +81,8 @@ public class CitaServiceImpl implements CitaService {
 
         citaRepository.save(cita);
 
+        medicoClient.actualizarDisponibilidadMedico(request.idMedico(), DisponibilidadMedico.NO_DISPONIBLE.getCodigo());
+
         log.info("Cita registrada exitósamente");
 
         return citaMapper.entidadAResponse(
@@ -101,7 +105,8 @@ public class CitaServiceImpl implements CitaService {
 
         if (!Objects.equals(cita.getIdMedico(), request.idMedico())) {
             medicoClient.actualizarDisponibilidadMedico(cita.getIdMedico(), DisponibilidadMedico.DISPONIBLE.getCodigo());
-            medicoClient.actualizarDisponibilidadMedico(request.idMedico(), DisponibilidadMedico.DISPONIBLE.getCodigo());
+
+            medicoClient.actualizarDisponibilidadMedico(request.idMedico(), DisponibilidadMedico.NO_DISPONIBLE.getCodigo());
         }
 
         cita.actualizar(
@@ -121,6 +126,7 @@ public class CitaServiceImpl implements CitaService {
     @Override
     public void eliminar(Long id) {
         Cita cita = obtenerCitaOException(id);
+        Long idMedico = cita.getIdMedico();
 
         log.info("Eliminando cita con id: {}", id);
 
@@ -134,27 +140,42 @@ public class CitaServiceImpl implements CitaService {
 
         Cita cita = obtenerCitaOException(idCita);
 
-        Long idDisponibilidadMedico = validarDisponibilidadMedico(idEstadoCita);
-
-        log.info("Estado cita: {}", EstadoCita.obtenerEstadoCitaPorCodigo(idEstadoCita));
-
-        log.info("Actualizando estado de la cita con id: {}", idCita);
+        Long idDisponibilidadMedico = obtenerDisponibilidadMedico(idEstadoCita);
 
         cita.actualizarEstadoCita(EstadoCita.obtenerEstadoCitaPorCodigo(idEstadoCita));
 
-        medicoClient.actualizarDisponibilidadMedico(cita.getIdMedico(), idDisponibilidadMedico);
+        log.info("Estado actual cita {}", cita.getEstadoCita().getCodigo());
 
-        log.info("Estado de la cita {} actualizando correctamente", idCita);
+        programarActualizacionDisponibilidadMedico(cita.getIdMedico(), idDisponibilidadMedico);
+
+        log.info("Estado de la cita {} actualizado; la disponibilidad del médico se sincronizará al confirmar la transacción", idCita);
     }
 
     @Override
     public Integer contarCitasPorMedico(Long idMedico) {
-        return citaRepository.countByEstadoRegistroAndIdMedicoAndIdCitaNot(idMedico);
+        return citaRepository.countCitasActivasByIdMedico(idMedico);
     }
 
     @Override
     public Integer contarCitasPorPaciente(Long idPaciente) {
-        return citaRepository.countByEstadoRegistroAndIdPaciente(idPaciente);
+        return citaRepository.countCitasActivasByIdPaciente(idPaciente);
+    }
+
+    private void programarActualizacionDisponibilidadMedico(Long idMedico, Long idDisponibilidadMedico) {
+        Runnable actualizarMedico = () -> medicoClient.actualizarDisponibilidadMedico(idMedico, idDisponibilidadMedico);
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    actualizarMedico.run();
+                    log.info("Disponibilidad del médico con id {} actualizada después del commit", idMedico);
+                }
+            });
+        } else {
+            actualizarMedico.run();
+            log.info("Disponibilidad del médico con id {} actualizada sin transacción activa", idMedico);
+        }
     }
 
     private MedicoResponse obtenerMedicoActivo(Long id) {
@@ -189,14 +210,12 @@ public class CitaServiceImpl implements CitaService {
         return pacienteClient.obtenerPacienteSinEstadoPorId(id);
     }
 
-    private Long validarDisponibilidadMedico(Long idEstadoCita) {
-        if (idEstadoCita.equals(EstadoCita.PENDIENTE.getCodigo()) || idEstadoCita.equals(EstadoCita.CONFIRMADA.getCodigo())) {
-            return DisponibilidadMedico.NO_DISPONIBLE.getCodigo();
-        }
-        if (idEstadoCita.equals(EstadoCita.EN_CURSO.getCodigo())) {
-            return DisponibilidadMedico.EN_CONSULTA.getCodigo();
-        }
-        return DisponibilidadMedico.DISPONIBLE.getCodigo();
+    private Long obtenerDisponibilidadMedico(Long idEstadoCita) {
+        return switch (EstadoCita.obtenerEstadoCitaPorCodigo(idEstadoCita)) {
+            case PENDIENTE, CONFIRMADA -> DisponibilidadMedico.NO_DISPONIBLE.getCodigo();
+            case EN_CURSO -> DisponibilidadMedico.EN_CONSULTA.getCodigo();
+            default -> DisponibilidadMedico.DISPONIBLE.getCodigo();
+        };
     }
 
     private void validarMedicoDisponible(MedicoResponse medico) {
@@ -206,7 +225,7 @@ public class CitaServiceImpl implements CitaService {
     }
 
     private void validarNumeroCitasPaciente(Long idPaciente) {
-        Integer count = citaRepository.countByEstadoRegistroAndId(idPaciente);
+        Integer count = citaRepository.countCitasActivasByIdPaciente(idPaciente);
         if (count > 0) {
             throw new IllegalArgumentException("El paciente no puede tener dos citas en curso");
         }
