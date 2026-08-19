@@ -6,6 +6,7 @@ target/
 
 servicioa
 serviciob
+data
 
 ### STS ###
 .apt_generated

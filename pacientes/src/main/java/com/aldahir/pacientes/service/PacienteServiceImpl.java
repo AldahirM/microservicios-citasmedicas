@@ -1,5 +1,6 @@
 package com.aldahir.pacientes.service;
 
+import com.aldahir.commons.client.CitasClient;
 import com.aldahir.commons.dto.pacientes.PacienteRequest;
 import com.aldahir.commons.dto.pacientes.PacienteResponse;
 import com.aldahir.commons.enums.EstadoRegistro;
@@ -22,6 +23,8 @@ public class PacienteServiceImpl implements PacienteService {
     private final PacienteRepository pacienteRepository;
 
     private final PacienteMapper pacienteMapper;
+
+    private final CitasClient citaClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -91,7 +94,10 @@ public class PacienteServiceImpl implements PacienteService {
     @Override
     public void eliminar(Long id) {
 
-        // falta lógica de citas
+        if (citaClient.obtenerCitasActivasPorPaciente(id) > 0) {
+            log.info("Citas del paciente: {}", citaClient.obtenerCitasActivasPorPaciente(id));
+            throw new IllegalStateException("No se puede eliminar un paciente con citas pendientes");
+        }
 
         Paciente paciente = obtenerPacienteOException(id);
 

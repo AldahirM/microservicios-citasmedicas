@@ -18,7 +18,7 @@ public record MedicoRequest(
 
         @NotNull(message = "El apellidoMaterno es requerido")
         @Min(value = 18, message = "La edad mínima es de 18 años")
-        @Max(value = 100, message = "La edad máxima es de 18 años")
+        @Max(value = 100, message = "La edad máxima es de 100 años")
         Short edad,
 
         @NotBlank(message = "El email es requerido")

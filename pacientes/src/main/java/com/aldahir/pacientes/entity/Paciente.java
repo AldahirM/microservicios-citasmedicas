@@ -2,6 +2,7 @@ package com.aldahir.pacientes.entity;
 
 import com.aldahir.commons.enums.EstadoRegistro;
 import com.aldahir.commons.utils.StringCustomUtils;
+import com.aldahir.commons.utils.ValoresNumericosUtils;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -76,7 +77,10 @@ public class Paciente {
             String apellidoMaterno,
             String email,
             String telefono,
-            String direccion
+            String direccion,
+            Short edad,
+            Double peso,
+            Double estatura
     ) {
         StringCustomUtils.validarTamanio(nombre, 5, 50, "El nombre debe tener entre 5 y 50 caracteres");
         StringCustomUtils.validarTamanio(apellidoPaterno, 5, 50, "El apellido paterno debe tener entre 5 y 50 caracteres");
@@ -84,6 +88,9 @@ public class Paciente {
         StringCustomUtils.validarTamanio(email, 5, 100, "El email debe tener entre 10 y 100 caracteres");
         StringCustomUtils.validarTamanio(telefono, 10, 10, "El teléfono debe tener 10 caracteres");
         StringCustomUtils.validarTamanio(direccion, 10, 150, "La dirección debe tener entre 10 y 150 caracteres");
+        ValoresNumericosUtils.validarRangoShort(edad, (short) 1, (short) 100, "La edad debe ser positiva");
+        ValoresNumericosUtils.validarRangoDouble(peso, 0.1, 200.0, "El peso debe ser positivo");
+        ValoresNumericosUtils.validarRangoDouble(estatura, 0.1, 2.0, "La estatura debe ser positiva");
     }
 
     public void actualizarDatos(
@@ -97,7 +104,7 @@ public class Paciente {
             String telefono,
             String direccion
     ) {
-        validarDatos(nombre, apellidoPaterno, apellidoMaterno, email, telefono, direccion);
+        validarDatos(nombre, apellidoPaterno, apellidoMaterno, email, telefono, direccion, edad, peso, estatura);
         this.nombre = nombre;
         this.apellidoPaterno = apellidoPaterno;
         this.apellidoMaterno = apellidoMaterno;
@@ -112,5 +119,4 @@ public class Paciente {
     public void calcularIMC() {
         this.imc = this.peso / (this.estatura * this.estatura);
     }
-
 }

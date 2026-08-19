@@ -17,6 +17,19 @@ public class ValoresNumericosUtils {
             throw new IllegalArgumentException(mensaje);
     }
 
+    public static void validarShortPositivo(Short numero, String mensaje) {
+        validarNumeroRequerido(numero);
+        if (numero < 0)
+            throw new IllegalArgumentException(mensaje);
+    }
+
+    public static void validarRangoShort(Short numero, Short min, Short max, String mensaje) {
+        validarNumeroRequerido(numero);
+        if (numero < min || numero > max) {
+            throw new IllegalArgumentException(mensaje);
+        }
+    }
+
     public static void validarEnteroPositivo(Integer numero, String mensaje) {
         validarNumeroRequerido(numero);
 

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -61,6 +62,10 @@ public class MedicoServiceImpl implements MedicoService {
     @Override
     public void actualizarDisponibilidadMedico(Long idMedico, Long idDisponibilidad) {
         Medico medico = obtenerMedicoActivoOException(idMedico);
+
+        if(Objects.equals(medico.getDisponibilidadMedico().getCodigo(), idDisponibilidad)){
+            return;
+        }
 
         if(DisponibilidadMedico.DISPONIBLE.getCodigo().equals(idDisponibilidad)){
             if(citasClient.obtenerCitasActivasPorMedico(idMedico) > 0){
@@ -126,6 +131,10 @@ public class MedicoServiceImpl implements MedicoService {
     @Override
     public void eliminar(Long id) {
         Medico medico =  obtenerMedicoActivoOException(id);
+
+        if(citasClient.obtenerCitasActivasPorMedico(id) > 0){
+            throw new IllegalStateException("No se puede eliminar un médico con citas activas");
+        }
 
         log.info("Eliminando médico con id: {}", id);
 

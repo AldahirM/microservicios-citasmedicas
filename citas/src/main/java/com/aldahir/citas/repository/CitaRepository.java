@@ -10,14 +10,11 @@ import java.util.Optional;
 
 public interface CitaRepository extends JpaRepository<Cita, Long> {
 
-    @Query("SELECT COUNT(*) FROM Cita WHERE estadoCita = 'PENDIENTE' OR estadoCita = 'CONFIRMADA' OR estadoCita = 'EN_CURSO'  AND id = :id")
-    Integer countByEstadoRegistroAndId(Long id);
+    @Query("SELECT COUNT(*) FROM Cita WHERE idPaciente = :idPaciente AND (estadoCita = 'PENDIENTE' OR estadoCita = 'CONFIRMADA' OR estadoCita = 'EN_CURSO')")
+    Integer countCitasActivasByIdPaciente(Long idPaciente);
 
-    @Query("SELECT COUNT(*) FROM Cita WHERE idMedico = :idMedico AND (estadoCita = 'PENDIENTE' OR estadoCita = 'CONFIRMADA' OR estadoCita = 'EN_CURSO' )")
-    Integer countByEstadoRegistroAndIdMedico(Long idMedico);
-
-    @Query("SELECT COUNT(*) FROM Cita WHERE idPaciente = :idPaciente AND (estadoCita = 'CONFIRMADA' OR estadoCita = 'EN_CURSO' )")
-    Integer countByEstadoRegistroAndIdPaciente(Long idPaciente);
+    @Query("SELECT COUNT(*) FROM Cita WHERE idMedico = :idMedico AND (estadoCita = 'CONFIRMADA' OR estadoCita = 'EN_CURSO' )")
+    Integer countCitasActivasByIdMedico(Long idMedico);
 
     List<Cita> findByEstadoRegistro(EstadoRegistro estadoRegistro);
 

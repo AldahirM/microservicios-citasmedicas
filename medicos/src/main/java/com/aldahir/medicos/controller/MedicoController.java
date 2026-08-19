@@ -32,6 +32,6 @@ public class MedicoController extends CommonController<MedicoRequest, MedicoResp
             @PathVariable @Positive(message = "El idDisponibilidad debe ser positivo") Long idDisponibilidad
     ) {
         service.actualizarDisponibilidadMedico(idMedico, idDisponibilidad);
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.noContent().build();
     }
 }
