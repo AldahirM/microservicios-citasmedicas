@@ -103,11 +103,7 @@ public class CitaServiceImpl implements CitaService {
 
         PacienteResponse paciente = obtenerPacienteActivo(request.idPaciente());
 
-        if (!Objects.equals(cita.getIdMedico(), request.idMedico())) {
-            medicoClient.actualizarDisponibilidadMedico(cita.getIdMedico(), DisponibilidadMedico.DISPONIBLE.getCodigo());
-
-            medicoClient.actualizarDisponibilidadMedico(request.idMedico(), DisponibilidadMedico.NO_DISPONIBLE.getCodigo());
-        }
+        validarNumeroCitasPaciente(paciente.id());
 
         cita.actualizar(
                 request.idPaciente(),
@@ -115,6 +111,12 @@ public class CitaServiceImpl implements CitaService {
                 request.fechaCita(),
                 request.sintomas()
         );
+
+        if (!Objects.equals(cita.getIdMedico(), request.idMedico())) {
+            medicoClient.actualizarDisponibilidadMedico(cita.getIdMedico(), DisponibilidadMedico.DISPONIBLE.getCodigo());
+
+            medicoClient.actualizarDisponibilidadMedico(request.idMedico(), DisponibilidadMedico.NO_DISPONIBLE.getCodigo());
+        }
 
         return citaMapper.entidadAResponse(
                 cita,
@@ -126,7 +128,10 @@ public class CitaServiceImpl implements CitaService {
     @Override
     public void eliminar(Long id) {
         Cita cita = obtenerCitaOException(id);
-        Long idMedico = cita.getIdMedico();
+
+        if (cita.getEstadoCita().getCodigo().equals(EstadoCita.PENDIENTE.getCodigo())) {
+            medicoClient.actualizarDisponibilidadMedico(cita.getIdMedico(), DisponibilidadMedico.DISPONIBLE.getCodigo());
+        }
 
         log.info("Eliminando cita con id: {}", id);
 
@@ -223,6 +228,7 @@ public class CitaServiceImpl implements CitaService {
             throw new IllegalArgumentException("Medico no disponible");
         }
     }
+
 
     private void validarNumeroCitasPaciente(Long idPaciente) {
         Integer count = citaRepository.countCitasActivasByIdPaciente(idPaciente);

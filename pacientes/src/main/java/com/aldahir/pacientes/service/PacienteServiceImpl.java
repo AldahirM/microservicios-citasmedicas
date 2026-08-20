@@ -65,6 +65,10 @@ public class PacienteServiceImpl implements PacienteService {
 
         Paciente paciente = obtenerPacienteOException(id);
 
+        if (citaClient.obtenerCitasActivasPorPaciente(id) > 0) {
+            throw new IllegalStateException("No se puede actualizar un paciente con citas pendientes");
+        }
+
         validarDatosUnicos(request);
 
         paciente.agregarEstadoRegistro(EstadoRegistro.ACTIVO);
