@@ -63,14 +63,8 @@ public class MedicoServiceImpl implements MedicoService {
     public void actualizarDisponibilidadMedico(Long idMedico, Long idDisponibilidad) {
         Medico medico = obtenerMedicoActivoOException(idMedico);
 
-        if(Objects.equals(medico.getDisponibilidadMedico().getCodigo(), idDisponibilidad)){
+        if (Objects.equals(medico.getDisponibilidadMedico().getCodigo(), idDisponibilidad)) {
             return;
-        }
-
-        if(DisponibilidadMedico.DISPONIBLE.getCodigo().equals(idDisponibilidad)){
-            if(citasClient.obtenerCitasActivasPorMedico(idMedico) > 0){
-                throw new IllegalArgumentException("No se puede actualizar la disponibilidad a disponible de un médico con citas activas");
-            }
         }
 
         log.info("Actualizando disponibilidad del médico con id: {}", idMedico);
@@ -81,7 +75,7 @@ public class MedicoServiceImpl implements MedicoService {
 
         medico.actualizarDisponibilidad(nuevaDisponibilidad);
 
-        log.info("Disponibilidad del médico con id {} cambió de {} a {}", idMedico,  anteriorDisponibilidad, nuevaDisponibilidad);
+        log.info("Disponibilidad del médico con id {} cambió de {} a {}", idMedico, anteriorDisponibilidad, nuevaDisponibilidad);
     }
 
     @Override
@@ -110,6 +104,10 @@ public class MedicoServiceImpl implements MedicoService {
 
         log.info("Actualizando médico con id: {}", id);
 
+        if (citasClient.obtenerCitasActivasPorMedico(id) > 0) {
+            throw new IllegalStateException("No se puede actualizar un médico con citas activas");
+        }
+
         validarCambiosUnicos(request, id);
 
         medico.actualizar(
@@ -130,9 +128,9 @@ public class MedicoServiceImpl implements MedicoService {
 
     @Override
     public void eliminar(Long id) {
-        Medico medico =  obtenerMedicoActivoOException(id);
+        Medico medico = obtenerMedicoActivoOException(id);
 
-        if(citasClient.obtenerCitasActivasPorMedico(id) > 0){
+        if (citasClient.obtenerCitasActivasPorMedico(id) > 0) {
             throw new IllegalStateException("No se puede eliminar un médico con citas activas");
         }
 
